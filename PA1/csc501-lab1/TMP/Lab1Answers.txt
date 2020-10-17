@@ -1,0 +1,41 @@
+1.What are the advantages and disadvantages of each of the two scheduling policies? Also, give the advantages and disadvantages of the round robin scheduling policy originally implemented in Xinu.
+
+Solution:
+
+Random Scheduling:
+    Advantages:
+        1. Low to negligible starvation
+        2. Robust and simple design
+    Disadvantages:
+        1. In the case where there is one interactive process [High Prio] and a lot of non interactive processes [Lower Prio];
+           There is a possibility that the lower prio processes get scheduled before the higher and this is not a good case.
+        2. Unfair for I/O intensive processes.
+Linux Like:
+    Advantages:
+        1. Ensures fairness among processes; [I/O bound processes which have not used up their counter]
+        2. Ensures that in one epoch every process gets a chance to run.
+    Disadvantages:
+        1. It's heavy algorithm with more number of calculations.
+        2. Time complexity is higher than default and random schedulers.
+Xinu's default scheduler:
+    Advantages:
+        1. Highly interactive processes always get scheduled first.
+        2. Simple implementation
+    Disadvantages:
+        1. Starvation exists 
+        2. Performance of this type of scheduling algorithm highly depends on the value of time interval chosen.
+
+
+2. Describe when each of the schedulers run the NULL process.
+
+Solution:
+
+Random scheduler - NULLPROC gets scheduled only if the ready queue is empty
+Linux Like - Switch to NULLPROC happens when the ready queue is empty 
+
+3. Assume that there are three processes P1, P2, P3 that will run forever without blocking. We want to allocate the following CPU times to each of them: 20% to P1, 30% to P2, and 50% to P3. Which priorities do we need to set to P1, P2, and P3 to accomplish this if we want to use the Random scheduler? Assume that those processes are the only ones running in the machine. Could you give a generalization of your result to n processes? Explain.
+
+Assigning P1 -> 20 ; P2 ->30 and P3 -> 50 will handle the requirement. [The ratio needs to be in 2:3:5]
+
+Assuming that 'n' processes's CPU % desired sums upto 100% - Each process can be allocated a priority of the % value it has requested. [or in a common ratio as shown above]
+

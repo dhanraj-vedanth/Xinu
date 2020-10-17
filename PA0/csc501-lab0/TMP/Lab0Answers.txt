@@ -1,0 +1,136 @@
+
+
+
+1. Assuming the XINU text begins at address 0x0, draw a rough diagram of XINU’s memory layout with addresses derived from your experimental measurements. Include the information you uncovered from running your version of printsegaddress() and printprocstks().
+
+
+                                                       PROC[MAIN]                    PROC[PRNULL]
+                             
+                                            LIMIT    ESP     EBP      LIMIT       ESP          EBP 
+    0x0 etext=1d7e9 edata=22897 end=2af38 [ffdffc] [ffef80] [16773112] [fff000] [16776988]   [16777212]
+     |           |            |        |        |         |        |  |           |             |
+     V___________V____________V________V________V_________V________V__V___________V_____________V
+     |  Text     | Data       | BSS    | HEAP|    Call STACK #1     |         Call STACK #2     |	     
+     |___________|____________|________|_____|______________________|___________________________|
+
+     											[HIGHER ADDRESS]
+
+     [These Values were obtained from my run of the main.c file (Attached it just in case)]
+
+
+
+
+2. What is the difference in stack top address before and after calling printtos() ? Draw a diagram to illustrate what are the contents of the items pushed into the stack between these two time points.
+
+   Top of Stack before : 0x00ffefb0, Top of stack after: 0x00ffefa8
+
+    ________________
+   |                |					
+   |		    |Before printtos()		^
+   |________________|-> 0x00ffefb0		| Higher memory
+   | Return addr    |				|		
+   |________________|				|
+   |		    |					
+   | caller's EBP   |
+   |________________|After printtos()
+   |		    |-> 0x00ffefa8
+   |		    |
+   |________________|
+
+    
+   Registers EIP and EBP gets pushed onto the stack between these two. 
+
+
+3. Which byte order is adopted in the host machine that we are using ? How did you find out ?
+
+	Used a script from "stackoverflow" to test the Endianess: 
+
+	Method #1: 
+	int main()
+		{
+		  int x = 1;
+
+		  char *y = (char*)&x;
+
+		  printf("%c\n",*y+48);
+		}
+
+	Outputs : 1 for Little Endian and 0 for Big Endian
+
+	Result: 1 --> Xinu works on Little Endian byte ordering. 
+
+	Method #2: 
+		On the terminal : lscpu | grep Endian
+		Output: Byte Order:	Little Endian
+
+	Further explanation: 
+
+				       higher memory
+			          ----->
+			    +----+----+----+----+
+			    |0x01|0x00|0x00|0x00|
+			    +----+----+----+----+
+			    A
+			    |
+			   &x
+
+	Since Xinu works on LITTLE ENDIAN, the memory layout is as shown above.
+
+
+4.  Briefly describe the mov, push, pusha, pop, and popa instructions in the x86.
+
+	 a. MOV:
+
+	A mov instruction in x86 is primarily used to move the data from source to destination. 
+
+	While register-to-register moves are possible, direct memory-to-memory moves are not. In cases where memory transfers are desired, the source memory contents must first be loaded into a register, then can be stored to the destination memory address.
+	Syntax
+	mov <reg>,<reg>
+	mov <reg>,<mem>
+
+
+	b. PUSH
+
+	The push instruction places its operand onto the top of the hardware supported stack in memory. Specifically, push first decrements ESP by 4, then places its operand into the contents of the 32-bit location at address [ESP]. ESP (the stack pointer) is decremented by push since the x86 stack grows down - i.e. the stack grows from high addresses to lower addresses.
+	Syntax
+	push <reg32>
+	push <mem>
+
+
+	c. POP 
+
+	The pop instruction removes the 4-byte data element from the top of the hardware-supported stack into the specified operand (i.e. register or memory location). It first moves the 4 bytes located at memory location [SP] into the specified register or memory location, and then increments SP by 4.
+	Syntax
+	pop <reg32>
+	pop <mem>
+
+
+	d. PUSHA
+
+	Pushes all general purpose registers onto the stack in the following order: (E)AX, (E)CX, (E)DX, (E)BX, (E)SP, (E)BP, (E)SI, (E)DI
+
+	e. POPA 
+
+	Does the opposite of PUSHA. It used used to pop out the general purpose registers from the stack in the reverse order as above. [ DI, SI, BP, BX, DX, CX, and AX]
+
+
+
+5.	In a stack frame, local variables are stored below the top of the stack. In task 3, does your result show all the local variables declared in your printtos function? If not, can you explain that? (hint: try to disable the compiler optimization by specifing -O0 in your Makefile) 
+
+
+	I was unable to see all the local variables. Explanation given below. 
+	Without any optimization option, the compiler’s goal is to reduce the cost of compilation and to make debugging produce the expected results. Statements are independent: if you stop the program with a breakpoint between statements, you can then assign a new value to any variable or change the program counter to any other statement in the function and get exactly the results you expect from the source code.
+
+	The compiler performs optimization based on the knowledge it has of the program. Compiling multiple files at once to a single output file mode allows the compiler to use information gained from all of the files when compiling each of them.
+
+	Once the compiler optimization was turned off by specifying -O0, one can visualise the expected debugging output at the cost of performance. 
+
+
+
+Sources: 
+
+	[	https://gcc.gnu.org/onlinedocs/gcc/Optimize-Options.html
+		https://stackoverflow.com/questions/12791864/c-program-to-check-little-vs-big-endian
+		https://www.cs.virginia.edu/~evans/cs216/guides/x86.html
+		https://www.geeksforgeeks.org/memory-layout-of-c-program/
+																	]

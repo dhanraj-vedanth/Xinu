@@ -1,0 +1,69 @@
+1. The priority inversion problem could cause that a higher-priority process needs to wait for the completion of a lower-priority process.
+
+1.1 Priority inheritance is one approach to address this issue. Please give another approach and briefly describe its idea.
+
+A. Priority ceiling protocol:
+With priority ceiling protocol, the shared mutex process (that runs the operating system code) has a characteristic (high) priority of its own, which is assigned to the task locking the mutex. This works well, provided the other high priority task(s) that tries to access the mutex does not have a priority higher than the ceiling priority.
+Priority Ceiling Protocol is a job task synchronization protocol in a real-time system that is better than Priority inheritance protocol in many ways. Real-Time Systems are multitasking systems that involve the use of semaphore variables, signals, and events for job synchronization.
+In Priority ceiling protocol an assumption is made that all the jobs in the system have a fixed priority. It does not fall into a deadlock state.
+The chained blocking problem of the Priority Inheritance Protocol is resolved in the Priority Ceiling Protocol.
+
+C. Random boosting:
+Ready tasks holding locks are randomly boosted in priority until they exit the critical section. This solution is used in Microsoft Windows.
+
+D. Avoid blocking:
+Because priority inversion involves a low-priority task blocking a high-priority task, one way to avoid priority inversion is to avoid blocking, for example by using non-blocking synchronization or read-copy-update.
+
+[Source : https://en.wikipedia.org/wiki/Priority_inversion
+https://www.geeksforgeeks.org/priority-ceiling-protocol/]
+
+
+1.2 Design a test case to show that your approach can address the priority inversion problem. You should compare the results that derived from the original XINU implementation (use semaphore) and that derived from your implementation (use readers/writer locks). Put your results in Lab2Answers.txt and your test case program (name it task1.c) in both ./sys and ./TMP
+
+THE ISSUE:
+Let's assume 3 processes A,B,C and their priorities are 20,25,40
+
+In case of XINU's regular semaphore implementation after A acquires the lock and enteres the critical section, C needs to wait till A and B are done executing to enter critical section although C has higher priority.
+In our implementation of priority inversion, C need not wait as A and B's priorities are boosted upto 30 and this makes sure that C quickly gets to enter the critical section.
+
+
+[Here: low_prio: 20; med_prio: 25; high_prio: 40]
+-----------------------------------------
+Output for priority inversion problem with Semaphores
+
+low_prio proc is trying to acquire the semaphore
+med_prio proc is trying to acquire the semaphore
+low_prio proc has acquired the lock ! 
+med_prio proc has acquired the lock ! 
+high_prio proc is trying to acquire the semaphore
+high_prio proc has acquired the lock ! 
+low_prio proc released the semaphore
+med_prio proc released the semaphore
+
+Explanation: Here processes A, B, C [Low --> High] are having prios 20,25,40. low_prio acquires it first and as a resule medium and high do not get to acquire the lock.
+No priotity inheritance happens here!
+
+-----------------------------------------
+Priority inversion test case with LOCKS(priority_inheritance)
+
+low_prio proc: to acquire lock
+low_prio proc: acquired lock, sleep 10s
+high_prio proc released the semaphore
+med_prio proc I am a Dummy process
+high_prio proc: to acquire lock
+
+Changed prio of proc[45] pprio:40 pinh: 20
+
+low_prio proc: to acquire locklow_prio proc: to release lock
+high_prio proc: acquired lock, sleep 10s
+med_prio proc I will wait for a bit now
+high_prio proc: to acquire lockhigh_prio proc: to release lock
+
+Explanation: For the priority inheritance - The low priority process first acquires it; A medium prio process is a dummy process that does not intend to hold any lock.
+The high prio process wishes to acquire the lock and this causes Priority Inheritance and the result is as above. 
+
+
+2. Synchronization is a quite complex issue in operating systems. To show your understanding about process synchronization, you are asked to point out a potential problem in this pesudo-code: task2_sync_issue.c. Multiple reader processes can execute this code concurrently by calling reader(). You are asked to describe an issue it may cause and why it can happen. Put your answer in Lab2Answers.txt mentioned above.
+
+The major issue here is that writers can STARVE, ie, there is an unbounded wait time on for the writers. The issue arises when a reader acquires the lock and then a writer tries to acquire it and further multiple readers with lower prio than the writer tries to acquire it, it gets into the lock.
+The writer never gets a chance to run until the readers count gets to 0; prio inheritance and certian conditions on the lock acquiring policy would help solve this.

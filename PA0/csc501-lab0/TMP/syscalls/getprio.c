@@ -1,0 +1,40 @@
+/* getprio.c - getprio */
+
+#include <conf.h>
+#include <kernel.h>
+#include <proc.h>
+#include <stdio.h>
+#include <lab0.h>
+
+/*------------------------------------------------------------------------
+ * getprio -- return the scheduling priority of a given process
+ *------------------------------------------------------------------------
+ */
+SYSCALL getprio(int pid)
+{
+	STATWORD ps;    
+	struct	pentry	*pptr;
+	unsigned int start_time;
+	unsigned int final_time;
+	if (systracker == 1){
+		start_time = ctr1000;
+	}
+
+	disable(ps);
+	if (isbadpid(pid) || (pptr = &proctab[pid])->pstate == PRFREE) {
+		restore(ps);
+		if (systracker == 1){
+                final_time = ctr1000 - start_time;
+                freq_matrix[currpid][3] += 1;
+                time_matrix[currpid][3] += final_time;
+        }
+		return(SYSERR);
+	}
+	restore(ps);
+	if (systracker == 1){
+		final_time = ctr1000 - start_time;
+		freq_matrix[currpid][3] += 1;
+		time_matrix[currpid][3] += final_time;
+	}
+	return(pptr->pprio);
+}
